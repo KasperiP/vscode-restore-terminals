@@ -7,6 +7,7 @@ export interface TerminalConfig {
 }
 
 export interface TerminalWindow {
+  cwd?: string;
   splitTerminals?: TerminalConfig[];
 }
 

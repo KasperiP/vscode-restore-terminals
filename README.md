@@ -10,6 +10,7 @@ Simply configure your VSCode settings JSON file to look something like this:
  "restoreTerminals.runOnStartup": true,
  "restoreTerminals.terminals": [
     {
+      "cwd": "${workspaceFolder:server}",
       "splitTerminals": [
         {
           "name": "server",
@@ -42,6 +43,8 @@ Simply configure your VSCode settings JSON file to look something like this:
 ```
 
 The outer array represents a integrated VSCode terminal window, and the `splitTerminals` array contains the information about how each terminal window should be split up.
+
+Set `cwd` on a terminal window when its commands must start in a specific workspace folder. Use `${workspaceFolder}` for a single-root workspace or `${workspaceFolder:folderName}` for a named folder in a multi-root workspace. Restore Terminals fails instead of falling back to the active folder when the requested workspace folder is unavailable.
 
 You can also use a custom config file under. The file should be at `.vscode/restore-terminals.json` in any workspace you want. A sample config file is [here](https://github.com/EthanSK/restore-terminals-vscode/blob/master/sample-test-project/.vscode/restore-terminals.json). If this config file is present, Restore Terminals will try and load settings from it first, then use `settings.json` as a fallback.
 

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { delay } from "./utils";
 import { Configuration, TerminalConfig, TerminalWindow } from "./model";
+import { resolveTerminalCwd } from "./terminalCwd";
 
 const DEFAULT_ARTIFICAL_DELAY = 300;
 const SPLIT_TERM_CHECK_DELAY = 100;
@@ -19,6 +20,17 @@ export default async function restoreTerminals(configuration: Configuration) {
     return;
   }
 
+  // Resolve every configured cwd before disposing an existing terminal. A typo or
+  // missing named workspace folder must fail closed without destroying the user's
+  // current terminal layout.
+  const workspaceFolders = vscode.workspace.workspaceFolders?.map((folder) => ({
+    name: folder.name,
+    fsPath: folder.uri.fsPath,
+  }));
+  const resolvedCwds = terminalWindows.map(({ cwd }) =>
+    resolveTerminalCwd(cwd, workspaceFolders)
+  );
+
   if (vscode.window.activeTerminal && !keepExistingTerminalsOpen) {
     vscode.window.terminals.forEach((terminal) => {
       //i think calling terminal.dispose before creating the new termials causes error because the terminal has disappeard and it fux up. we can do it after, and check that the terminal we are deleting is not in the list of terminals we just created
@@ -34,7 +46,12 @@ export default async function restoreTerminals(configuration: Configuration) {
     terminal: vscode.Terminal;
   }[] = [];
   //create the terminals sequentially so theres no glitches, but run the commands in parallel
-  for (const terminalWindow of terminalWindows) {
+  for (
+    let windowIndex = 0;
+    windowIndex < terminalWindows.length;
+    windowIndex++
+  ) {
+    const terminalWindow = terminalWindows[windowIndex];
     if (!terminalWindow.splitTerminals) {
       // vscode.window.showInformationMessage("No split terminal configuration provided to restore terminals with.") //this might be annoying
       return;
@@ -45,7 +62,7 @@ export default async function restoreTerminals(configuration: Configuration) {
 
     term = vscode.window.createTerminal({
       name: name,
-      // cwd: vscode.window.activeTextEditor?.document.uri.fsPath, //i think this happens by default
+      cwd: resolvedCwds[windowIndex],
     });
 
     term.show();
