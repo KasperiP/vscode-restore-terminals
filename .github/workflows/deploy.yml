@@ -32,6 +32,17 @@ jobs:
           MARKETPLACE_VERSION="${MARKETPLACE_VERSION:-0.0.0}"
           echo "$EXTENSION_ID: local $PACKAGE_VERSION, published $MARKETPLACE_VERSION"
           dpkg --compare-versions "$PACKAGE_VERSION" gt "$MARKETPLACE_VERSION"
+      - name: Check publishing credentials
+        run: |
+          if [ -z "${VSCE_PAT}" ]; then
+            echo "::error::VSCE_PAT is not set. Create the publisher at" \
+              "https://marketplace.visualstudio.com/manage/publishers, then add an" \
+              "Azure DevOps token (Organization: All accessible organizations," \
+              "scope: Marketplace > Manage) as the VSCE_PAT repository secret."
+            exit 1
+          fi
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
       - name: Publish extension
         # --no-dependencies: the extension bundles with esbuild and has no runtime
         # dependencies, and vsce cannot walk pnpm's symlinked node_modules.

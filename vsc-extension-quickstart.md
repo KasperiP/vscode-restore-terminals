@@ -69,3 +69,16 @@ Unit tests live in `src/test/unit` and use the built-in `node:test` runner. Node
 Pushing to `master` triggers `.github/workflows/deploy.yml`, which publishes to the Marketplace only if `version` in `package.json` is greater than the published version. Bump it in the same commit as the change.
 
 To build a `.vsix` locally: `pnpm run package`.
+
+### One-time setup
+
+1. Create the publisher `KasperiP` at [marketplace.visualstudio.com/manage/publishers](https://marketplace.visualstudio.com/manage/publishers). This is independent of Azure DevOps and works even if you cannot create an organization.
+2. Create an Azure DevOps organization at [dev.azure.com](https://dev.azure.com). New organizations must be linked to an active Azure subscription; the free/pay-as-you-go tier is enough.
+3. In that organization, create a Personal Access Token with **Organization: All accessible organizations** and scope **Marketplace → Manage**. An organization-scoped token fails with a misleading 401.
+4. Add the token as the `VSCE_PAT` repository secret under Settings → Secrets and variables → Actions.
+
+### Token expiry
+
+Azure DevOps PATs expire — one year at most. When one lapses the release workflow fails at the publish step with a 401 that looks exactly like a misconfiguration, so it is worth a calendar reminder.
+
+**Global PATs in Azure DevOps are retired on 1 December 2026.** Before then this workflow needs to move to Microsoft Entra ID authentication. The pinned `@vscode/vsce` already supports `--azure-credential` for that, and the migration needs a managed identity with a federated credential rather than a stored secret. See [Publishing Extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
