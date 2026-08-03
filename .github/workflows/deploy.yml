@@ -11,20 +11,30 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
       - name: Install Node
         uses: actions/setup-node@v7
         with:
-          node-version: 22
-          cache: npm
+          node-version: 26
+          cache: pnpm
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Check version validity
         run: |
-          export EXTENSION_ID=$(jq -r '.publisher' package.json).$(jq -r '.name' package.json)
-          export PACKAGE_VERSION=$(jq -r '.version' package.json)
-          export MARKETPLACE_VERSION=$(npx @vscode/vsce show $EXTENSION_ID --json | jq -j '.versions[0].version')
-          dpkg --compare-versions $PACKAGE_VERSION "gt" $MARKETPLACE_VERSION
+          set -euo pipefail
+          EXTENSION_ID="$(jq -r '.publisher' package.json).$(jq -r '.name' package.json)"
+          PACKAGE_VERSION="$(jq -r '.version' package.json)"
+          # Not yet on the Marketplace (the very first release) is not an error,
+          # so an unknown extension is treated as version 0.0.0.
+          MARKETPLACE_VERSION="$(pnpm exec vsce show "$EXTENSION_ID" --json 2>/dev/null \
+            | jq -r '.versions[0].version // empty' 2>/dev/null || true)"
+          MARKETPLACE_VERSION="${MARKETPLACE_VERSION:-0.0.0}"
+          echo "$EXTENSION_ID: local $PACKAGE_VERSION, published $MARKETPLACE_VERSION"
+          dpkg --compare-versions "$PACKAGE_VERSION" gt "$MARKETPLACE_VERSION"
       - name: Publish extension
-        run: npx @vscode/vsce publish
+        # --no-dependencies: the extension bundles with esbuild and has no runtime
+        # dependencies, and vsce cannot walk pnpm's symlinked node_modules.
+        run: pnpm exec vsce publish --no-dependencies
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
