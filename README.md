@@ -2,6 +2,8 @@
 
 Automatically spawn integrated terminal windows and split terminals, and run any shell commands when VSCode starts up!
 
+Requires VSCode 1.125.0 or newer.
+
 ## How to use
 
 Simply configure your VSCode settings JSON file to look something like this:
@@ -14,14 +16,20 @@ Simply configure your VSCode settings JSON file to look something like this:
       "splitTerminals": [
         {
           "name": "server",
+          "icon": "server-process",
+          "color": "terminal.ansiGreen",
           "commands": ["npm i", "npm run dev"]
         },
         {
           "name": "client",
+          "icon": "browser",
+          "color": "terminal.ansiBlue",
           "commands": ["npm run dev:client"]
         },
         {
           "name": "test",
+          "icon": "beaker",
+          "color": "terminal.ansiMagenta",
           "commands": ["jest --watch"]
         }
       ]
@@ -30,11 +38,15 @@ Simply configure your VSCode settings JSON file to look something like this:
       "splitTerminals": [
         {
           "name": "build & e2e",
+          "icon": "tools",
+          "color": "terminal.ansiYellow",
           "commands": ["npm run eslint", "npm run build", "npm run e2e"],
           "shouldRunCommands": false
         },
         {
           "name": "worker",
+          "icon": "gear",
+          "color": "terminal.ansiCyan",
           "commands": ["npm-run-all --parallel redis tsc-watch-start worker"]
         }
       ]
@@ -52,9 +64,59 @@ You can also use a custom config file under. The file should be at `.vscode/rest
 
 The order of split terminals from left to right is the order in the array.
 
-You can manually trigger the restoration of terminals by running `Restore Terminals` in the command palette.
+### Icons and colours
 
-If you find the extension glitching out, try increasing the `restoreTerminals.artificialDelayMilliseconds` setting to a higher number, such as `1000`.
+Every terminal, including each split, can set its own `icon` and `color` so you can tell them apart at a glance in the terminal tab list.
+
+`icon` is the id of a [VSCode product icon](https://code.visualstudio.com/api/references/icons-in-labels). Some useful ones:
+
+| Icon             | Good for                    |
+| ---------------- | --------------------------- |
+| `server-process` | a dev server or API         |
+| `browser`        | a frontend / client watcher |
+| `beaker`         | tests                       |
+| `tools`          | builds and linting          |
+| `database`       | a database or cache         |
+| `gear`           | background workers          |
+| `terminal-bash`  | a plain scratch shell       |
+
+`color` is the id of a [VSCode theme colour](https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors), and tints the terminal's icon. Stick to the `terminal.ansi*` keys — VSCode recommends them because they stay readable in both light and dark themes:
+
+`terminal.ansiRed`, `terminal.ansiGreen`, `terminal.ansiYellow`, `terminal.ansiBlue`, `terminal.ansiMagenta`, `terminal.ansiCyan`, `terminal.ansiWhite`, `terminal.ansiBlack`, plus a `terminal.ansiBright*` variant of each.
+
+Both are optional; leave them out and you get VSCode's default terminal icon.
+
+### Per-terminal shell and environment
+
+Each split can also override how its shell is launched:
+
+| Option      | What it does                                                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `cwd`       | Working directory for this split only, overriding the terminal window's `cwd`. Supports the same `${workspaceFolder}` variables. |
+| `env`       | Environment variables for this split, on top of what it would normally inherit. Set a value to `null` to remove that variable.   |
+| `shellPath` | Path to a specific shell executable, instead of your default terminal shell.                                                     |
+| `shellArgs` | Arguments for that shell, as an array or a single string.                                                                        |
+
+```json
+{
+  "name": "deploy",
+  "icon": "rocket",
+  "color": "terminal.ansiRed",
+  "cwd": "${workspaceFolder:infra}",
+  "shellPath": "/bin/bash",
+  "shellArgs": ["-l"],
+  "env": { "AWS_PROFILE": "staging", "NODE_OPTIONS": null },
+  "commands": ["terraform plan"]
+}
+```
+
+### Speed
+
+Restore Terminals waits for each shell to actually finish starting before it sends any commands, and does that for every terminal at once. That is normally near-instant.
+
+If your setup still glitches out or runs commands in the wrong terminal, set `restoreTerminals.artificialDelayMilliseconds` to a number of milliseconds to bring back the old fixed pause between every step. It is unset by default.
+
+You can manually trigger the restoration of terminals by running `Restore Terminals` in the command palette.
 
 If you do not want this extension to close the currently open terminal windows, you can simply set `restoreTerminals.keepExistingTerminalsOpen` to `true`.
 
@@ -66,6 +128,8 @@ If you don't like using split terminals, then just provide one object in each sp
 
 ### Contributions
 
-Unless you can 100% prove your contribution fully works with a video, and the code is clean and makes sense, I am no longer accepting contributions. Too many contributions have been submitted that don't work, and the VSCode official API doesn't work in many cases, and this extension already uses a couple hacks to get around it.
+Contributions are welcome. Because the behaviour here depends on real terminal timing that unit tests cannot cover, please describe how you verified your change in a real VSCode window — a short screen recording is ideal for anything touching terminal creation, splitting or command execution.
+
+Run `pnpm test` (typecheck, lint and unit tests) before opening a PR. See [vsc-extension-quickstart.md](vsc-extension-quickstart.md) for how to build and try the extension against `sample-test-project`.
 
 **Enjoy!**

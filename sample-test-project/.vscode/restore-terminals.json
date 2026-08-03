@@ -1,38 +1,56 @@
 {
-  "artificialDelayMilliseconds": 700,
-  "keepExistingTerminalsOpen": false,
   "runOnStartup": true,
+  "keepExistingTerminalsOpen": false,
   "terminals": [
     {
+      "cwd": "${workspaceFolder}",
       "splitTerminals": [
         {
           "name": "server",
-          "commands": ["npm i", "npm run dev"]
+          "icon": "server-process",
+          "color": "terminal.ansiGreen",
+          "commands": [
+            "echo 'window 1, split 1 of 3 — expect a green server icon'",
+            "echo 'two commands ran in this terminal, this is the second'"
+          ]
         },
         {
           "name": "client",
-          "commands": ["npm run dev:client"]
+          "icon": "browser",
+          "color": "terminal.ansiBlue",
+          "commands": ["echo 'window 1, split 2 of 3 — expect a blue browser'"]
         },
         {
-          "name": "test",
-          "commands": ["jest --watch"]
+          "name": "cwd override",
+          "icon": "folder",
+          "color": "terminal.ansiMagenta",
+          "cwd": "${workspaceFolder}/.vscode",
+          "commands": [
+            "echo 'window 1, split 3 of 3 — this one should be in .vscode, not the workspace root:'",
+            "pwd"
+          ]
         }
       ]
     },
     {
       "splitTerminals": [
         {
-          "name": "build & e2e",
+          "name": "paste only",
+          "icon": "tools",
+          "color": "terminal.ansiYellow",
+          "shouldRunCommands": false,
           "commands": [
-            "eslint --ext .tsx --ext .ts lib/",
-            "npm run build",
-            "npm run e2e"
-          ],
-          "shouldRunCommands": false
+            "echo 'window 2, split 1 of 2 — this text should sit unexecuted at the prompt'"
+          ]
         },
         {
-          "name": "worker",
-          "commands": ["npm-run-all --parallel redis tsc-watch-start worker"]
+          "name": "env",
+          "icon": "gear",
+          "color": "terminal.ansiCyan",
+          "env": { "RESTORE_TERMINALS_SAMPLE": "env-var-works" },
+          "commands": [
+            "echo \"window 2, split 2 of 2 — expect env-var-works: $RESTORE_TERMINALS_SAMPLE\""
+          ]
         }
       ]
     }
