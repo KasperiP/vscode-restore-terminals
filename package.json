@@ -1,8 +1,8 @@
 {
   "name": "vscode-restore-terminals",
   "displayName": "Restore Terminals (Continued)",
-  "description": "Spawn integrated terminals and run commands on startup",
-  "version": "1.2.3",
+  "description": "Restore your terminal layout automatically. Open split integrated terminals with custom names, icons, colors, working directories and env vars, and run startup commands every time you open a workspace.",
+  "version": "1.2.4",
   "publisher": "KasperiP",
   "license": "MIT",
   "icon": "icon.png",
@@ -26,11 +26,30 @@
   "keywords": [
     "terminal",
     "terminals",
-    "restore",
-    "startup",
+    "restore terminals",
+    "terminal layout",
     "split terminal",
-    "workspace"
+    "integrated terminal",
+    "startup",
+    "startup commands",
+    "run commands",
+    "auto run",
+    "automation",
+    "workspace",
+    "multi-root",
+    "session",
+    "tasks",
+    "shell",
+    "dev server",
+    "productivity",
+    "terminal profiles",
+    "terminal manager"
   ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "qna": "marketplace",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -43,7 +62,7 @@
       }
     ],
     "configuration": {
-      "title": "Restore Terminals Config",
+      "title": "Restore Terminals",
       "type": "object",
       "properties": {
         "restoreTerminals.runOnStartup": {
