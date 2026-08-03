@@ -1,0 +1,58 @@
+name: Publish
+
+# Publishing the draft release ships it. The .vsix attached to the release is
+# what goes to the Marketplace, so what you reviewed is what users receive.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to Marketplace
+    runs-on: ubuntu-latest
+    # Holds VSCE_PAT and can require a manual approval. Configure under
+    # Settings > Environments > marketplace.
+    environment: marketplace
+    steps:
+      # Deliberately no checkout. This job holds the publishing token and only
+      # handles the release asset, so repository code never executes next to
+      # the secret.
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - name: Download the released extension
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download "${{ github.event.release.tag_name }}" \
+            --repo "${{ github.repository }}" \
+            --pattern '*.vsix'
+          ls -l ./*.vsix
+      - name: Check publishing credentials
+        run: |
+          if [ -z "${VSCE_PAT}" ]; then
+            echo "::error::VSCE_PAT is not set on the marketplace environment." \
+              "Create the publisher at https://marketplace.visualstudio.com/manage/publishers," \
+              "then add an Azure DevOps token (Organization: All accessible organizations," \
+              "scope: Marketplace > Manage) under Settings > Environments > marketplace."
+            exit 1
+          fi
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Publish extension
+        run: |
+          set -euo pipefail
+          npx --yes @vscode/vsce@3.9.2 publish \
+            -i ./*.vsix \
+            ${{ github.event.release.prerelease && '--pre-release' || '' }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}

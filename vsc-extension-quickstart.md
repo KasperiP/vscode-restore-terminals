@@ -69,12 +69,14 @@ Unit tests live in `src/test/unit` and use the built-in `node:test` runner. Node
 Pushing to `master` does not publish anything. Releasing is deliberate:
 
 1. Bump `version` in `package.json` and add a `CHANGELOG.md` entry, then merge to `master`.
-2. Draft a GitHub Release tagged `v<version>` — the tag must match `package.json` or the workflow stops.
-3. Publish the release. `.github/workflows/deploy.yml` packages the extension, runs the checks, attaches the `.vsix` to the release, and then waits for approval before publishing to the Marketplace.
+2. Tag and push: `git tag v<version> && git push --tags`. `release-draft.yml` checks the tag matches `package.json`, runs the checks, packages the extension and opens a **draft** release with the `.vsix` attached and generated notes.
+3. Review the draft, edit the notes, and publish it. `publish.yml` then downloads that `.vsix` from the release and ships it to the Marketplace.
 
-Marking the GitHub Release as a pre-release publishes it to the Marketplace as a pre-release too.
+This repository has **immutable releases** enabled, which is why the order matters: assets cannot be added to a release once it is published, so the draft has to be complete before you publish it. A published release and its tag can never be amended — if something is wrong, bump the version and tag again.
 
-The publish job runs in the `marketplace` environment and never checks out the repository — it only ships the `.vsix` the build job produced, so what you approve is exactly what users receive.
+Marking the release as a pre-release publishes it to the Marketplace as a pre-release too.
+
+The publish job runs in the `marketplace` environment and never checks out the repository. It only handles the `.vsix` attached to the release, so what you reviewed is exactly what users receive, and repository code never runs next to the publishing token.
 
 To build a `.vsix` locally: `pnpm run package`.
 
