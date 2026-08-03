@@ -1,3 +1,14 @@
+<img src="./.github/restore-terminals.png" alt="Restore Terminals GitHub-repository banner">
+
+<div align="center">
+
+[![Build Status](https://img.shields.io/github/actions/workflow/status/KasperiP/vscode-restore-terminals/ci.yml?branch=master&style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/actions/workflows/ci.yml)
+[![VS Marketplace](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FKasperiP%2Fvscode-restore-terminals%2Fmaster%2Fpackage.json&query=%24.version&prefix=v&label=marketplace&style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://marketplace.visualstudio.com/items?itemName=KasperiP.vscode-restore-terminals)
+[![License](https://img.shields.io/github/license/KasperiP/vscode-restore-terminals?style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/blob/master/LICENSE)
+[![Contributors](https://img.shields.io/github/contributors/KasperiP/vscode-restore-terminals?style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/graphs/contributors)
+
+</div>
+
 # Restore Terminals (Continued)
 
 Automatically spawn integrated terminal windows and split terminals, and run any shell commands when VSCode starts up!
@@ -146,6 +157,12 @@ If you don't like using split terminals, then just provide one object in each sp
 Contributions are welcome. Because the behaviour here depends on real terminal timing that unit tests cannot cover, please describe how you verified your change in a real VSCode window — a short screen recording is ideal for anything touching terminal creation, splitting or command execution.
 
 Run `pnpm test` (typecheck, lint and unit tests) before opening a PR. See [vsc-extension-quickstart.md](vsc-extension-quickstart.md) for how to build and try the extension against `sample-test-project`.
+
+Thanks to everyone who has contributed:
+
+<a href="https://github.com/KasperiP/vscode-restore-terminals/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=KasperiP/vscode-restore-terminals" alt="Contributors" />
+</a>
 
 ### Credits
 
