@@ -2,7 +2,7 @@
   "name": "vscode-restore-terminals",
   "displayName": "Restore Terminals (Continued)",
   "description": "Restore your terminal layout automatically. Open split integrated terminals with custom names, icons, colors, working directories and env vars, and run startup commands every time you open a workspace.",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "publisher": "KasperiP",
   "license": "MIT",
   "icon": "icon.png",

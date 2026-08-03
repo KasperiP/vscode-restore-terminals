@@ -2,7 +2,7 @@
 
 Versions up to and including 1.1.9 are from the original [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by Ethan Sarif-Kattan. From 1.2.3 onwards this is the community fork.
 
-## 1.2.4
+## 1.2.5
 
 - Marketplace listing only, no functional changes: a fuller description, more search keywords, a dark gallery banner, the Q&A tab enabled, and a new icon. The settings section is now titled "Restore Terminals" instead of "Restore Terminals Config".
 
