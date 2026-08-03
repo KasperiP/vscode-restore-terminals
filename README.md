@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/KasperiP/vscode-restore-terminals/ci.yml?branch=master&style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/actions/workflows/ci.yml)
-[![VS Marketplace](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FKasperiP%2Fvscode-restore-terminals%2Fmaster%2Fpackage.json&query=%24.version&prefix=v&label=marketplace&style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://marketplace.visualstudio.com/items?itemName=KasperiP.vscode-restore-terminals)
-[![License](https://img.shields.io/github/license/KasperiP/vscode-restore-terminals?style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/blob/master/LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/KasperiP/vscode-restore-terminals/ci.yml?branch=main&style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/actions/workflows/ci.yml)
+[![VS Marketplace](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FKasperiP%2Fvscode-restore-terminals%2Fmain%2Fpackage.json&query=%24.version&prefix=v&label=marketplace&style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://marketplace.visualstudio.com/items?itemName=KasperiP.vscode-restore-terminals)
+[![License](https://img.shields.io/github/license/KasperiP/vscode-restore-terminals?style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/KasperiP/vscode-restore-terminals?style=flat&colorA=2f9fe8&colorB=2f9fe8)](https://github.com/KasperiP/vscode-restore-terminals/graphs/contributors)
 
 </div>
@@ -84,7 +84,7 @@ The outer array represents an integrated VSCode terminal window, and the `splitT
 
 Set `cwd` on a terminal window when its commands must start in a specific workspace folder. Use `${workspaceFolder}` for a single-root workspace or `${workspaceFolder:folderName}` for a named folder in a multi-root workspace. Restore Terminals fails instead of falling back to the active folder when the requested workspace folder is unavailable.
 
-You can also keep the config in the workspace itself, at `.vscode/restore-terminals.json` ([sample](https://github.com/KasperiP/vscode-restore-terminals/blob/master/sample-test-project/.vscode/restore-terminals.json)). If that file is present it is used, and `settings.json` is the fallback.
+You can also keep the config in the workspace itself, at `.vscode/restore-terminals.json` ([sample](https://github.com/KasperiP/vscode-restore-terminals/blob/main/sample-test-project/.vscode/restore-terminals.json)). If that file is present it is used, and `settings.json` is the fallback.
 
 ## Options
 
