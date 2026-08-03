@@ -1,6 +1,10 @@
 # Change Log
 
+Versions up to and including 1.1.9 are from the original [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by Ethan Sarif-Kattan. From 1.2.0 onwards this is the community fork.
+
 ## 1.2.0
+
+- First release of the community fork, published as `KasperiP.vscode-restore-terminals`. Your existing `restoreTerminals.*` settings and `.vscode/restore-terminals.json` work unchanged, but **uninstall the original extension first** — both register the same command and having both enabled will break one of them.
 
 - **Requires VSCode 1.125.0 or newer.**
 - Split terminals are now created with the supported `parentTerminal` API instead of firing the terminal-split command and polling until a new terminal appeared. Splitting and naming should be more reliable.

@@ -1,15 +1,20 @@
 {
-  "name": "restore-terminals",
-  "displayName": "Restore Terminals",
+  "name": "vscode-restore-terminals",
+  "displayName": "Restore Terminals (Continued)",
   "description": "Spawn integrated terminals and run commands on startup",
-  "version": "1.1.9",
-  "publisher": "EthanSK",
+  "version": "1.2.0",
+  "publisher": "KasperiP",
+  "license": "MIT",
   "icon": "icon.png",
   "type": "module",
   "packageManager": "pnpm@10.11.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/EthanSK/restore-terminals-vscode"
+    "url": "https://github.com/KasperiP/vscode-restore-terminals"
+  },
+  "homepage": "https://github.com/KasperiP/vscode-restore-terminals#readme",
+  "bugs": {
+    "url": "https://github.com/KasperiP/vscode-restore-terminals/issues"
   },
   "engines": {
     "vscode": "^1.125.0",
@@ -17,6 +22,14 @@
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "terminal",
+    "terminals",
+    "restore",
+    "startup",
+    "split terminal",
+    "workspace"
   ],
   "activationEvents": [
     "onStartupFinished"

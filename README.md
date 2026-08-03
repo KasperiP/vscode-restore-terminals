@@ -1,8 +1,23 @@
-# Restore Terminals
+# Restore Terminals (Continued)
 
 Automatically spawn integrated terminal windows and split terminals, and run any shell commands when VSCode starts up!
 
 Requires VSCode 1.125.0 or newer.
+
+> **This is a community fork of [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by [Ethan Sarif-Kattan](https://github.com/EthanSK)**, continued with an updated toolchain, modern VSCode APIs and bug fixes. All of the original design and the great majority of the ideas here are his work; this fork exists to keep it maintained, not to replace or compete with it. It stays MIT licensed under the original copyright, with the fork's changes added alongside. Huge thanks to Ethan for building it in the first place.
+>
+> **Uninstall the original extension before installing this one.** Both register the same `Restore Terminals` command, so having both enabled will break one of them and can spawn your terminals twice.
+>
+> Your existing configuration works unchanged — the `restoreTerminals.*` settings and `.vscode/restore-terminals.json` are exactly the same.
+
+## What's different from the original
+
+- Split terminals use the supported VSCode API instead of a command-and-poll hack, so splitting and naming are more reliable
+- Restoration waits for each shell to actually start rather than sleeping for a fixed delay, which makes it much faster
+- Commands run through shell integration where the shell supports it
+- Working `icon` and new `color` options, plus per-split `cwd`, `env`, `shellPath` and `shellArgs`
+- Errors are reported instead of silently doing nothing
+- Several bug fixes — see the [changelog](CHANGELOG.md)
 
 ## How to use
 
@@ -58,7 +73,7 @@ The outer array represents a integrated VSCode terminal window, and the `splitTe
 
 Set `cwd` on a terminal window when its commands must start in a specific workspace folder. Use `${workspaceFolder}` for a single-root workspace or `${workspaceFolder:folderName}` for a named folder in a multi-root workspace. Restore Terminals fails instead of falling back to the active folder when the requested workspace folder is unavailable.
 
-You can also use a custom config file under. The file should be at `.vscode/restore-terminals.json` in any workspace you want. A sample config file is [here](https://github.com/EthanSK/restore-terminals-vscode/blob/master/sample-test-project/.vscode/restore-terminals.json). If this config file is present, Restore Terminals will try and load settings from it first, then use `settings.json` as a fallback.
+You can also use a custom config file under. The file should be at `.vscode/restore-terminals.json` in any workspace you want. A sample config file is [here](https://github.com/KasperiP/vscode-restore-terminals/blob/master/sample-test-project/.vscode/restore-terminals.json). If this config file is present, Restore Terminals will try and load settings from it first, then use `settings.json` as a fallback.
 
 ## Extra info
 
@@ -131,5 +146,9 @@ If you don't like using split terminals, then just provide one object in each sp
 Contributions are welcome. Because the behaviour here depends on real terminal timing that unit tests cannot cover, please describe how you verified your change in a real VSCode window — a short screen recording is ideal for anything touching terminal creation, splitting or command execution.
 
 Run `pnpm test` (typecheck, lint and unit tests) before opening a PR. See [vsc-extension-quickstart.md](vsc-extension-quickstart.md) for how to build and try the extension against `sample-test-project`.
+
+### Credits
+
+Original extension by [Ethan Sarif-Kattan](https://github.com/EthanSK) — [EthanSK/restore-terminals-vscode](https://github.com/EthanSK/restore-terminals-vscode). Please star the original repository if this extension is useful to you.
 
 **Enjoy!**
