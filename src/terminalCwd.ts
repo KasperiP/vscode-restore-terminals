@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from 'node:path';
 
 export interface WorkspaceFolderForCwd {
   name: string;
@@ -14,7 +14,7 @@ const WORKSPACE_FOLDER_VARIABLE = /^\$\{workspaceFolder(?::([^}]+))?\}(.*)$/;
  */
 export function resolveTerminalCwd(
   configuredCwd: string | undefined,
-  workspaceFolders: readonly WorkspaceFolderForCwd[] | undefined
+  workspaceFolders: readonly WorkspaceFolderForCwd[] | undefined,
 ): string | undefined {
   if (!configuredCwd) return undefined;
 
@@ -27,22 +27,22 @@ export function resolveTerminalCwd(
     ? folders.find(
         (folder) =>
           folder.name === requestedFolderName ||
-          path.basename(folder.fsPath) === requestedFolderName
+          path.basename(folder.fsPath) === requestedFolderName,
       )
     : folders.length === 1
-    ? folders[0]
-    : undefined;
+      ? folders[0]
+      : undefined;
 
   if (!workspaceFolder) {
     const requestedFolderDescription = requestedFolderName
       ? `named "${requestedFolderName}"`
-      : "the only workspace folder";
+      : 'the only workspace folder';
     throw new Error(
-      `Restore Terminals could not resolve ${configuredCwd}: ${requestedFolderDescription} is not available.`
+      `Restore Terminals could not resolve ${configuredCwd}: ${requestedFolderDescription} is not available.`,
     );
   }
 
-  const relativeSuffix = variableMatch[2].replace(/^[/\\]+/, "");
+  const relativeSuffix = variableMatch[2].replace(/^[/\\]+/, '');
   return relativeSuffix
     ? path.resolve(workspaceFolder.fsPath, relativeSuffix)
     : workspaceFolder.fsPath;

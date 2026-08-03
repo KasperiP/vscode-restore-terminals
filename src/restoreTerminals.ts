@@ -1,14 +1,27 @@
-import * as vscode from "vscode";
-import { delay } from "./utils";
-import { Configuration, TerminalConfig, TerminalWindow } from "./model";
-import { resolveTerminalCwd } from "./terminalCwd";
+import { setTimeout as delay } from 'node:timers/promises';
+import * as vscode from 'vscode';
+import type { Configuration, TerminalConfig, TerminalWindow } from './model.ts';
+import {
+  resolveTerminalCwd,
+  type WorkspaceFolderForCwd,
+} from './terminalCwd.ts';
 
-const DEFAULT_ARTIFICAL_DELAY = 300;
-const SPLIT_TERM_CHECK_DELAY = 100;
-const MAX_TERM_CHECK_ATTEMPTS = 500; //this times SPLIT_TERM_CHECK_DELAY is the timeout
+/** How long to wait for a shell to actually spawn before giving up on it. */
+const PROCESS_START_TIMEOUT = 10_000;
+/** Shell integration is optional; never block restoration on it for long. */
+const SHELL_INTEGRATION_TIMEOUT = 5_000;
+
+interface PlannedTerminal {
+  config: TerminalConfig;
+  cwd: string | undefined;
+}
+
+interface CreatedTerminal {
+  config: TerminalConfig;
+  terminal: vscode.Terminal;
+}
 
 export default async function restoreTerminals(configuration: Configuration) {
-  console.log("restoring terminals", configuration);
   const {
     keepExistingTerminalsOpen,
     artificialDelayMilliseconds,
@@ -16,129 +29,173 @@ export default async function restoreTerminals(configuration: Configuration) {
   } = configuration;
 
   if (!terminalWindows) {
-    // vscode.window.showInformationMessage("No terminal window configuration provided to restore terminals with.") //this might be annoying
+    console.log('No terminal window configuration to restore');
     return;
   }
 
-  // Resolve every configured cwd before disposing an existing terminal. A typo or
-  // missing named workspace folder must fail closed without destroying the user's
-  // current terminal layout.
   const workspaceFolders = vscode.workspace.workspaceFolders?.map((folder) => ({
     name: folder.name,
     fsPath: folder.uri.fsPath,
   }));
-  const resolvedCwds = terminalWindows.map(({ cwd }) =>
-    resolveTerminalCwd(cwd, workspaceFolders)
-  );
 
-  if (vscode.window.activeTerminal && !keepExistingTerminalsOpen) {
-    vscode.window.terminals.forEach((terminal) => {
-      //i think calling terminal.dispose before creating the new termials causes error because the terminal has disappeard and it fux up. we can do it after, and check that the terminal we are deleting is not in the list of terminals we just created
+  // Resolve every configured cwd before disposing an existing terminal. A typo
+  // or missing named workspace folder must fail closed without destroying the
+  // user's current terminal layout.
+  const plan = planTerminals(terminalWindows, workspaceFolders);
+  if (plan.length === 0) {
+    console.log('Nothing to restore');
+    return;
+  }
+
+  if (!keepExistingTerminalsOpen) {
+    for (const terminal of vscode.window.terminals) {
       console.log(`Disposing terminal ${terminal.name}`);
       terminal.dispose();
-    });
-  }
-  await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY); //without delay it starts bugging out
-
-  let commandsToRunInTerms: {
-    commands: string[];
-    shouldRunCommands: boolean;
-    terminal: vscode.Terminal;
-  }[] = [];
-  //create the terminals sequentially so theres no glitches, but run the commands in parallel
-  for (
-    let windowIndex = 0;
-    windowIndex < terminalWindows.length;
-    windowIndex++
-  ) {
-    const terminalWindow = terminalWindows[windowIndex];
-    if (!terminalWindow.splitTerminals) {
-      // vscode.window.showInformationMessage("No split terminal configuration provided to restore terminals with.") //this might be annoying
-      return;
-    }
-
-    let term!: vscode.Terminal;
-    let name = terminalWindow.splitTerminals[0]?.name;
-
-    term = vscode.window.createTerminal({
-      name: name,
-      cwd: resolvedCwds[windowIndex],
-    });
-
-    term.show();
-
-    //the first terminal split is already created from when we called createTerminal
-    if (terminalWindow.splitTerminals.length > 0) {
-      const { commands, shouldRunCommands } = terminalWindow.splitTerminals[0];
-      commands &&
-        commandsToRunInTerms.push({
-          commands,
-          shouldRunCommands: shouldRunCommands ?? true,
-          terminal: term,
-        });
-    }
-    await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY);
-
-    for (let i = 1; i < terminalWindow.splitTerminals.length; i++) {
-      const splitTerminal = terminalWindow.splitTerminals[i];
-      const createdSplitTerm = await createNewSplitTerminal(splitTerminal.name);
-
-      const { commands, shouldRunCommands } = splitTerminal;
-      commands &&
-        commandsToRunInTerms.push({
-          commands,
-          shouldRunCommands: shouldRunCommands ?? true,
-          terminal: createdSplitTerm,
-        });
-      await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY);
     }
   }
-  await delay(artificialDelayMilliseconds ?? DEFAULT_ARTIFICAL_DELAY);
-  //we run the actual commands in parallel
-  commandsToRunInTerms.forEach(async (el) => {
-    await runCommands(el.commands, el.terminal, el.shouldRunCommands);
+
+  // Creating a terminal is a direct API call now, so no pacing is needed between
+  // steps. artificialDelayMilliseconds stays as an escape hatch for anyone whose
+  // setup still needs the old behaviour.
+  const stepDelay = artificialDelayMilliseconds ?? 0;
+  if (stepDelay > 0) await delay(stepDelay);
+
+  const created: CreatedTerminal[] = [];
+  for (const splits of plan) {
+    const [first, ...remaining] = splits;
+
+    const parentTerminal = vscode.window.createTerminal(
+      terminalOptionsFor(first),
+    );
+    parentTerminal.show();
+    created.push({ config: first.config, terminal: parentTerminal });
+    if (stepDelay > 0) await delay(stepDelay);
+
+    for (const split of remaining) {
+      created.push({
+        config: split.config,
+        terminal: vscode.window.createTerminal({
+          ...terminalOptionsFor(split),
+          location: { parentTerminal },
+        }),
+      });
+      if (stepDelay > 0) await delay(stepDelay);
+    }
+  }
+
+  // Wait for the shells to actually be up rather than guessing with a sleep.
+  // Every terminal is waited on concurrently, so this costs one shell start.
+  await Promise.all(created.map(({ terminal }) => waitForProcess(terminal)));
+
+  await Promise.all(
+    created.map(async ({ config, terminal }) => {
+      if (!config.commands?.length) return;
+      const shellIntegration = await waitForShellIntegration(terminal);
+      runCommands(config.commands, terminal, config, shellIntegration);
+    }),
+  );
+
+  console.log(`Restored ${created.length} terminals`);
+}
+
+/**
+ * A split inherits its window's cwd unless it sets its own. Windows with no
+ * splits are dropped here so one empty entry cannot affect the others.
+ */
+function planTerminals(
+  terminalWindows: readonly TerminalWindow[],
+  workspaceFolders: readonly WorkspaceFolderForCwd[] | undefined,
+): PlannedTerminal[][] {
+  return terminalWindows
+    .map((terminalWindow) => {
+      const windowCwd = resolveTerminalCwd(
+        terminalWindow.cwd,
+        workspaceFolders,
+      );
+      return (terminalWindow.splitTerminals ?? []).map((config) => ({
+        config,
+        cwd: config.cwd
+          ? resolveTerminalCwd(config.cwd, workspaceFolders)
+          : windowCwd,
+      }));
+    })
+    .filter((splits) => splits.length > 0);
+}
+
+/**
+ * Icon and colour are applied per split terminal, since every split is its own
+ * createTerminal call rather than a terminal-split command.
+ */
+function terminalOptionsFor({
+  config,
+  cwd,
+}: PlannedTerminal): vscode.TerminalOptions {
+  return {
+    name: config.name,
+    cwd,
+    shellPath: config.shellPath,
+    shellArgs: config.shellArgs,
+    env: config.env,
+    iconPath: config.icon ? new vscode.ThemeIcon(config.icon) : undefined,
+    // The terminal.ansi* theme keys are what VSCode recommends here; they keep
+    // contrast sane across light and dark themes.
+    color: config.color ? new vscode.ThemeColor(config.color) : undefined,
+  };
+}
+
+/** Resolves once the shell process exists, or after a timeout. */
+async function waitForProcess(terminal: vscode.Terminal) {
+  const timedOut = Symbol('timeout');
+  const result = await Promise.race([
+    terminal.processId,
+    delay(PROCESS_START_TIMEOUT, timedOut),
+  ]);
+  if (result === timedOut) {
+    console.warn(`Terminal ${terminal.name} did not start in time`);
+  }
+}
+
+/**
+ * Shell integration activates asynchronously and never arrives for some shells,
+ * so this is a bounded wait that resolves to undefined rather than failing.
+ */
+async function waitForShellIntegration(
+  terminal: vscode.Terminal,
+): Promise<vscode.TerminalShellIntegration | undefined> {
+  if (terminal.shellIntegration) return terminal.shellIntegration;
+
+  return new Promise((resolve) => {
+    const subscription = vscode.window.onDidChangeTerminalShellIntegration(
+      (event) => {
+        if (event.terminal !== terminal) return;
+        subscription.dispose();
+        resolve(event.shellIntegration);
+      },
+    );
+    void delay(SHELL_INTEGRATION_TIMEOUT).then(() => {
+      subscription.dispose();
+      resolve(undefined);
+    });
   });
 }
 
-async function runCommands(
+function runCommands(
   commands: string[],
   terminal: vscode.Terminal,
-  shouldRunCommands: boolean = true
+  { shouldRunCommands = true }: TerminalConfig,
+  shellIntegration: vscode.TerminalShellIntegration | undefined,
 ) {
-  for (let j = 0; j < commands?.length; j++) {
-    const command = commands[j] + (shouldRunCommands ? "" : ";"); //add semicolon so all commands can run properly after user presses enter
-    terminal.sendText(command, shouldRunCommands);
-  }
-}
-
-async function createNewSplitTerminal(
-  name: string | undefined
-): Promise<vscode.Terminal> {
-  return new Promise(async (resolve, reject) => {
-    const numTermsBefore = vscode.window.terminals.length;
-    await vscode.commands.executeCommand("workbench.action.terminal.split");
-    if (name) {
-      await vscode.commands.executeCommand(
-        "workbench.action.terminal.renameWithArg",
-        {
-          name,
-        }
+  for (const command of commands) {
+    if (shouldRunCommands && shellIntegration) {
+      // Runs the command as a real shell execution the terminal reports on,
+      // instead of typing characters into the buffer and hoping.
+      shellIntegration.executeCommand(command);
+    } else {
+      //add semicolon so all commands can run properly after user presses enter
+      terminal.sendText(
+        command + (shouldRunCommands ? '' : ';'),
+        shouldRunCommands,
       );
     }
-    let attemptCount = 0;
-    while (true) {
-      const numTermsNow = vscode.window.terminals?.length;
-      if (attemptCount > MAX_TERM_CHECK_ATTEMPTS) {
-        reject();
-        break;
-      }
-      if (numTermsNow > numTermsBefore) {
-        resolve(vscode.window.terminals[numTermsNow - 1]);
-        break; //we know the terminal has now been split
-      } else {
-        await delay(SPLIT_TERM_CHECK_DELAY);
-        attemptCount++;
-      }
-    }
-  });
+  }
 }

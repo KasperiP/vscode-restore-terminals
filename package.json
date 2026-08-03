@@ -12,7 +12,7 @@
     "url": "https://github.com/EthanSK/restore-terminals-vscode"
   },
   "engines": {
-    "vscode": "^1.46.0",
+    "vscode": "^1.125.0",
     "node": ">=26"
   },
   "categories": [
@@ -48,12 +48,13 @@
             "number",
             "null"
           ],
-          "default": 150,
-          "description": "If you find restore terminals glitching out, or running some commands in the wrong window, you might want to try increasing this number to further delay the processing of actions. If you find it taking too long to open the terminal windows, you can try reducing this number, but be cautious as if it's too fast it will bug out."
+          "default": null,
+          "description": "Leave this null (the default) and Restore Terminals waits for each shell to actually start before running its commands, which is both faster and more reliable than a fixed delay. Set a number of milliseconds only if your setup still glitches out or runs commands in the wrong window; it adds that pause between every step, like older versions did."
         },
         "restoreTerminals.terminals": {
           "type": "array",
           "items": {
+            "type": "object",
             "properties": {
               "cwd": {
                 "type": "string",
@@ -62,6 +63,7 @@
               "splitTerminals": {
                 "type": "array",
                 "items": {
+                  "type": "object",
                   "properties": {
                     "name": {
                       "type": "string",
@@ -69,16 +71,73 @@
                     },
                     "icon": {
                       "type": "string",
-                      "description": "The icon to give the terminal window"
+                      "description": "The id of a VSCode product icon to give the terminal, for example \"terminal-bash\" or \"flame\". See https://code.visualstudio.com/api/references/icons-in-labels for the full list.",
+                      "examples": [
+                        "terminal",
+                        "terminal-bash",
+                        "server-process",
+                        "browser",
+                        "beaker",
+                        "database",
+                        "tools",
+                        "rocket",
+                        "flame"
+                      ]
+                    },
+                    "color": {
+                      "type": "string",
+                      "description": "The id of a VSCode theme colour for the terminal icon, for example \"terminal.ansiGreen\". The terminal.ansi* keys are recommended as they stay readable in every theme.",
+                      "examples": [
+                        "terminal.ansiRed",
+                        "terminal.ansiGreen",
+                        "terminal.ansiYellow",
+                        "terminal.ansiBlue",
+                        "terminal.ansiMagenta",
+                        "terminal.ansiCyan",
+                        "terminal.ansiWhite",
+                        "terminal.ansiBrightRed",
+                        "terminal.ansiBrightGreen",
+                        "terminal.ansiBrightYellow",
+                        "terminal.ansiBrightBlue",
+                        "terminal.ansiBrightMagenta",
+                        "terminal.ansiBrightCyan",
+                        "terminal.ansiBrightBlack"
+                      ]
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "description": "The working directory for this split only, overriding the terminal window's cwd. Supports the same ${workspaceFolder} variables."
+                    },
+                    "shellPath": {
+                      "type": "string",
+                      "description": "Path to a specific shell executable to run this split under, instead of the default terminal shell."
+                    },
+                    "shellArgs": {
+                      "type": [
+                        "array",
+                        "string"
+                      ],
+                      "description": "Arguments to pass to the shell executable.",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "env": {
+                      "type": "object",
+                      "description": "Environment variables for this split, added to the ones it would normally inherit. Set a value to null to remove that variable.",
+                      "additionalProperties": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
                     },
                     "commands": {
                       "type": "array",
                       "description": "The shell commands to execute when this terminal opens.",
                       "items": {
-                        "properties": {
-                          "type": "string",
-                          "description": "A shell command to run."
-                        }
+                        "type": "string",
+                        "description": "A shell command to run."
                       }
                     },
                     "shouldRunCommands": {

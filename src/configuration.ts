@@ -1,68 +1,52 @@
-import * as vscode from "vscode";
-import { Configuration, JsonConfiguration, TerminalWindow } from "./model";
-import { TextDecoder } from "text-encoding";
-import * as path from "path";
+import * as path from 'node:path';
+import * as vscode from 'vscode';
+import type {
+  Configuration,
+  JsonConfiguration,
+  TerminalWindow,
+} from './model.ts';
+
+const CONFIG_FILE_RELATIVE_PATH = ['.vscode', 'restore-terminals.json'];
 
 export async function getConfiguration(): Promise<Configuration> {
-  const keepExistingTerminalsOpen:
-    | boolean
-    | undefined = vscode.workspace
-    .getConfiguration("restoreTerminals")
-    .get("keepExistingTerminalsOpen");
-
-  const artificialDelayMilliseconds:
-    | number
-    | undefined = vscode.workspace
-    .getConfiguration("restoreTerminals")
-    .get("artificialDelayMilliseconds");
-
-  const terminalWindows:
-    | TerminalWindow[]
-    | undefined = vscode.workspace
-    .getConfiguration("restoreTerminals")
-    .get("terminals");
-
-  const runOnStartup: boolean | undefined = vscode.workspace
-    .getConfiguration("restoreTerminals")
-    .get("runOnStartup");
-
+  const settings = vscode.workspace.getConfiguration('restoreTerminals');
   const configFromFile = await getConfigurationFromJsonFile();
+
   return {
     keepExistingTerminalsOpen:
-      configFromFile?.keepExistingTerminalsOpen ?? keepExistingTerminalsOpen,
+      configFromFile?.keepExistingTerminalsOpen ??
+      settings.get<boolean>('keepExistingTerminalsOpen'),
     artificialDelayMilliseconds:
       configFromFile?.artificialDelayMilliseconds ??
-      artificialDelayMilliseconds,
-    terminalWindows: configFromFile?.terminalWindows ?? terminalWindows,
-    runOnStartup: configFromFile?.runOnStartup ?? runOnStartup,
+      settings.get<number>('artificialDelayMilliseconds'),
+    terminalWindows:
+      configFromFile?.terminals ?? settings.get<TerminalWindow[]>('terminals'),
+    runOnStartup:
+      configFromFile?.runOnStartup ?? settings.get<boolean>('runOnStartup'),
   };
 }
 
 async function getConfigurationFromJsonFile(): Promise<
-  Configuration | undefined
+  JsonConfiguration | undefined
 > {
   const { workspaceFolders } = vscode.workspace;
+  if (!workspaceFolders) return undefined;
 
-  if (!workspaceFolders) {
-    return undefined;
-  }
-  let configData: JsonConfiguration | undefined;
-  //find any workspace with the config
+  //use the first workspace that has a config file
   for (const folder of workspaceFolders) {
+    const configFilePath = vscode.Uri.file(
+      path.join(folder.uri.fsPath, ...CONFIG_FILE_RELATIVE_PATH),
+    );
+
+    let fileData: Uint8Array;
     try {
-      const configFilePath = vscode.Uri.file(
-        path.join(folder.uri.fsPath, ".vscode", "restore-terminals.json")
-      );
-      const fileData = await vscode.workspace.fs.readFile(configFilePath);
-      const fileDataString = new TextDecoder("utf-8").decode(fileData);
-      configData = JSON.parse(fileDataString);
-    } catch (error) {
-      console.log("No config in workspace", folder, error);
+      fileData = await vscode.workspace.fs.readFile(configFilePath);
+    } catch {
+      continue; //no config file in this workspace folder, which is the normal case
     }
+
+    return JSON.parse(new TextDecoder().decode(fileData)) as JsonConfiguration;
   }
-  if (!configData) return undefined;
-  return {
-    ...configData,
-    terminalWindows: configData?.terminals, //shim
-  };
+
+  return undefined;
 }
