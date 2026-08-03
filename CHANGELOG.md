@@ -2,6 +2,10 @@
 
 Versions up to and including 1.1.9 are from the original [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by Ethan Sarif-Kattan. From 1.2.3 onwards this is the community fork.
 
+## 1.2.4
+
+- Marketplace listing only, no functional changes: a fuller description, more search keywords, a dark gallery banner, the Q&A tab enabled, and a new icon. The settings section is now titled "Restore Terminals" instead of "Restore Terminals Config".
+
 ## 1.2.3
 
 - First release of the community fork, published as `KasperiP.vscode-restore-terminals`. Your existing `restoreTerminals.*` settings and `.vscode/restore-terminals.json` work unchanged, but **uninstall the original extension first** — both register the same command and having both enabled will break one of them.
