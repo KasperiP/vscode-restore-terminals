@@ -66,7 +66,15 @@ Unit tests live in `src/test/unit` and use the built-in `node:test` runner. Node
 
 ## Publish
 
-Pushing to `master` triggers `.github/workflows/deploy.yml`, which publishes to the Marketplace only if `version` in `package.json` is greater than the published version. Bump it in the same commit as the change.
+Pushing to `master` does not publish anything. Releasing is deliberate:
+
+1. Bump `version` in `package.json` and add a `CHANGELOG.md` entry, then merge to `master`.
+2. Draft a GitHub Release tagged `v<version>` — the tag must match `package.json` or the workflow stops.
+3. Publish the release. `.github/workflows/deploy.yml` packages the extension, runs the checks, attaches the `.vsix` to the release, and then waits for approval before publishing to the Marketplace.
+
+Marking the GitHub Release as a pre-release publishes it to the Marketplace as a pre-release too.
+
+The publish job runs in the `marketplace` environment and never checks out the repository — it only ships the `.vsix` the build job produced, so what you approve is exactly what users receive.
 
 To build a `.vsix` locally: `pnpm run package`.
 
@@ -74,8 +82,8 @@ To build a `.vsix` locally: `pnpm run package`.
 
 1. Create the publisher `KasperiP` at [marketplace.visualstudio.com/manage/publishers](https://marketplace.visualstudio.com/manage/publishers). This is independent of Azure DevOps and works even if you cannot create an organization.
 2. Create an Azure DevOps organization at [dev.azure.com](https://dev.azure.com). New organizations must be linked to an active Azure subscription; the free/pay-as-you-go tier is enough.
-3. In that organization, create a Personal Access Token with **Organization: All accessible organizations** and scope **Marketplace → Manage**. An organization-scoped token fails with a misleading 401.
-4. Add the token as the `VSCE_PAT` repository secret under Settings → Secrets and variables → Actions.
+3. In that organization, create a Personal Access Token with **Organization: All accessible organizations** and scope **Marketplace → Manage**. An organization-scoped token fails with a misleading 401. The Marketplace scope only appears after clicking **Show all scopes**.
+4. Create an environment named `marketplace` under Settings → Environments. Add yourself as a **required reviewer**, and add the token as a secret named `VSCE_PAT` **on that environment** rather than as a repository secret, so no other workflow can read it.
 
 ### Token expiry
 
