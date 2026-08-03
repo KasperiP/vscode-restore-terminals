@@ -15,11 +15,11 @@ Automatically spawn integrated terminal windows and split terminals, and run any
 
 Requires VSCode 1.125.0 or newer.
 
-> **This is a community fork of [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by [Ethan Sarif-Kattan](https://github.com/EthanSK)**, continued with an updated toolchain, modern VSCode APIs and bug fixes. All of the original design and the great majority of the ideas here are his work; this fork exists to keep it maintained, not to replace or compete with it. It stays MIT licensed under the original copyright, with the fork's changes added alongside. Huge thanks to Ethan for building it in the first place.
->
-> **Uninstall the original extension before installing this one.** Both register the same `Restore Terminals` command, so having both enabled will break one of them and can spawn your terminals twice.
->
-> Your existing configuration works unchanged — the `restoreTerminals.*` settings and `.vscode/restore-terminals.json` are exactly the same.
+> [!NOTE]
+> This is a community fork of [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by [Ethan Sarif-Kattan](https://github.com/EthanSK), continued with an updated toolchain, modern VSCode APIs and bug fixes. It stays MIT licensed under the original copyright. Your existing configuration works unchanged: the `restoreTerminals.*` settings and `.vscode/restore-terminals.json` are exactly the same.
+
+> [!IMPORTANT]
+> Uninstall the original extension before installing this one. Both register the same `Restore Terminals` command, so having both enabled will break one of them and can spawn your terminals twice.
 
 ## What's different from the original
 
@@ -28,13 +28,13 @@ Requires VSCode 1.125.0 or newer.
 - Commands run through shell integration where the shell supports it
 - Working `icon` and new `color` options, plus per-split `cwd`, `env`, `shellPath` and `shellArgs`
 - Errors are reported instead of silently doing nothing
-- Several bug fixes — see the [changelog](CHANGELOG.md)
+- Several bug fixes, listed in the [changelog](CHANGELOG.md)
 
 ## How to use
 
-Simply configure your VSCode settings JSON file to look something like this:
+Configure your VSCode settings JSON file to look something like this:
 
-```
+```json
  "restoreTerminals.runOnStartup": true,
  "restoreTerminals.terminals": [
     {
@@ -80,15 +80,13 @@ Simply configure your VSCode settings JSON file to look something like this:
   ]
 ```
 
-The outer array represents a integrated VSCode terminal window, and the `splitTerminals` array contains the information about how each terminal window should be split up.
+The outer array represents an integrated VSCode terminal window, and the `splitTerminals` array describes how that window is split up. Splits appear left to right in array order.
 
 Set `cwd` on a terminal window when its commands must start in a specific workspace folder. Use `${workspaceFolder}` for a single-root workspace or `${workspaceFolder:folderName}` for a named folder in a multi-root workspace. Restore Terminals fails instead of falling back to the active folder when the requested workspace folder is unavailable.
 
-You can also use a custom config file under. The file should be at `.vscode/restore-terminals.json` in any workspace you want. A sample config file is [here](https://github.com/KasperiP/vscode-restore-terminals/blob/master/sample-test-project/.vscode/restore-terminals.json). If this config file is present, Restore Terminals will try and load settings from it first, then use `settings.json` as a fallback.
+You can also keep the config in the workspace itself, at `.vscode/restore-terminals.json` ([sample](https://github.com/KasperiP/vscode-restore-terminals/blob/master/sample-test-project/.vscode/restore-terminals.json)). If that file is present it is used, and `settings.json` is the fallback.
 
-## Extra info
-
-The order of split terminals from left to right is the order in the array.
+## Options
 
 ### Icons and colours
 
@@ -106,7 +104,7 @@ Every terminal, including each split, can set its own `icon` and `color` so you 
 | `gear`           | background workers          |
 | `terminal-bash`  | a plain scratch shell       |
 
-`color` is the id of a [VSCode theme colour](https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors), and tints the terminal's icon. Stick to the `terminal.ansi*` keys — VSCode recommends them because they stay readable in both light and dark themes:
+`color` is the id of a [VSCode theme colour](https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors), and tints the terminal's icon. Stick to the `terminal.ansi*` keys, which VSCode recommends because they stay readable in both light and dark themes:
 
 `terminal.ansiRed`, `terminal.ansiGreen`, `terminal.ansiYellow`, `terminal.ansiBlue`, `terminal.ansiMagenta`, `terminal.ansiCyan`, `terminal.ansiWhite`, `terminal.ansiBlack`, plus a `terminal.ansiBright*` variant of each.
 
@@ -136,25 +134,27 @@ Each split can also override how its shell is launched:
 }
 ```
 
-### Speed
+### Settings
 
-Restore Terminals waits for each shell to actually finish starting before it sends any commands, and does that for every terminal at once. That is normally near-instant.
+| Setting                                        | Default | What it does                                                                                       |
+| ---------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `restoreTerminals.runOnStartup`                | `true`  | Restore terminals when VSCode opens. Set to `false` to only ever restore from the command palette. |
+| `restoreTerminals.keepExistingTerminalsOpen`   | `false` | Leave already-open terminals alone instead of closing them first.                                  |
+| `restoreTerminals.artificialDelayMilliseconds` | unset   | A fixed pause between every step. See below; you should not normally need it.                      |
 
-If your setup still glitches out or runs commands in the wrong terminal, set `restoreTerminals.artificialDelayMilliseconds` to a number of milliseconds to bring back the old fixed pause between every step. It is unset by default.
+You can restore at any time by running **Restore Terminals** from the command palette.
 
-You can manually trigger the restoration of terminals by running `Restore Terminals` in the command palette.
+Per split, `shouldRunCommands: false` pastes the commands into the terminal without executing them. And if you don't want splits at all, put a single object in each `splitTerminals` array.
 
-If you do not want this extension to close the currently open terminal windows, you can simply set `restoreTerminals.keepExistingTerminalsOpen` to `true`.
+### Timing
 
-If you do not want it to restore terminals on VSCode startup, but instead only run when you trigger it manually from the command palette, then set `restoreTerminals.runOnStartup` to `false`.
+Restore Terminals waits for each shell to actually finish starting before sending its commands, and does that for every terminal at once, so restoration is normally near-instant.
 
-If you don't want the commands to actually run, just be pasted in the terminal, then set `shouldRunCommands` to `false` in each `splitTerminals` object.
+Older versions instead slept for a fixed delay between every step. If your setup glitches out or runs commands in the wrong terminal, set `restoreTerminals.artificialDelayMilliseconds` to a number of milliseconds to bring that pause back.
 
-If you don't like using split terminals, then just provide one object in each split terminal array, which should be the intuitive thing to do.
+## Contributions
 
-### Contributions
-
-Contributions are welcome. Because the behaviour here depends on real terminal timing that unit tests cannot cover, please describe how you verified your change in a real VSCode window — a short screen recording is ideal for anything touching terminal creation, splitting or command execution.
+Contributions are welcome. Because the behaviour here depends on real terminal timing that unit tests cannot cover, please describe how you verified your change in a real VSCode window. A short screen recording is ideal for anything touching terminal creation, splitting or command execution.
 
 Run `pnpm test` (typecheck, lint and unit tests) before opening a PR. See [vsc-extension-quickstart.md](vsc-extension-quickstart.md) for how to build and try the extension against `sample-test-project`.
 
@@ -164,8 +164,8 @@ Thanks to everyone who has contributed:
   <img src="https://contrib.rocks/image?repo=KasperiP/vscode-restore-terminals" alt="Contributors" />
 </a>
 
-### Credits
+## Credits
 
-Original extension by [Ethan Sarif-Kattan](https://github.com/EthanSK) — [EthanSK/restore-terminals-vscode](https://github.com/EthanSK/restore-terminals-vscode). Please star the original repository if this extension is useful to you.
+Original extension by [Ethan Sarif-Kattan](https://github.com/EthanSK) at [EthanSK/restore-terminals-vscode](https://github.com/EthanSK/restore-terminals-vscode). All of the original design and the great majority of the ideas here are his work; this fork exists to keep it maintained, not to replace it. Please star the original repository if this extension is useful to you.
 
 **Enjoy!**
