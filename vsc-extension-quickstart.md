@@ -3,7 +3,7 @@
 ## Requirements
 
 - Node.js 26 or newer
-- pnpm 10 (pinned via the `packageManager` field — `corepack enable` will pick it up)
+- pnpm 10 (pinned via the `packageManager` field, so `corepack enable` will pick it up)
 
 ## What's in the folder
 
@@ -48,6 +48,7 @@ Extension output goes to **Output > Restore Terminals**. Set the level to Trace 
 - `pnpm run watch` rebundles on save; relaunch from the debug toolbar or reload the window (`Ctrl+R` / `Cmd+R`).
 - Local builds are unminified and carry a sourcemap, so breakpoints in `src/*.ts` bind. Only `vscode:prepublish` passes `--production` to minify.
 - Types are not checked by esbuild. Run `pnpm run typecheck` (or the `typecheck` task, which watches).
+- The full VSCode API surface is in `node_modules/@types/vscode/index.d.ts`.
 
 ## Checks
 
@@ -58,37 +59,10 @@ pnpm run test:unit   # node --test, runs the .ts sources directly
 pnpm test            # all three
 ```
 
-Unit tests live in `src/test/unit` and use the built-in `node:test` runner. Node runs the TypeScript sources directly via type stripping, so there is no compile step before testing. Anything that needs the real `vscode` API has to be verified by hand in the Extension Development Host — there is no integration-test harness.
+Unit tests live in `src/test/unit` and use the built-in `node:test` runner. Node runs the TypeScript sources directly via type stripping, so there is no compile step before testing. Anything that needs the real `vscode` API has to be verified by hand in the Extension Development Host. There is no integration-test harness.
 
-## Explore the API
+## Opening a PR
 
-- The full API surface is in `node_modules/@types/vscode/index.d.ts`.
+Run `pnpm test` first. CI runs the same checks on every pull request.
 
-## Publish
-
-Pushing to `master` does not publish anything. Releasing is deliberate:
-
-1. Bump `version` in `package.json` and add a `CHANGELOG.md` entry, then merge to `master`.
-2. Tag and push: `git tag v<version> && git push --tags`. `release-draft.yml` checks the tag matches `package.json`, runs the checks, packages the extension and opens a **draft** release with the `.vsix` attached and generated notes.
-3. Review the draft, edit the notes, and publish it. `publish.yml` then downloads that `.vsix` from the release and ships it to the Marketplace.
-
-This repository has **immutable releases** enabled, which is why the order matters: assets cannot be added to a release once it is published, so the draft has to be complete before you publish it. A published release and its tag can never be amended — if something is wrong, bump the version and tag again.
-
-Marking the release as a pre-release publishes it to the Marketplace as a pre-release too.
-
-The publish job runs in the `marketplace` environment and never checks out the repository. It only handles the `.vsix` attached to the release, so what you reviewed is exactly what users receive, and repository code never runs next to the publishing token.
-
-To build a `.vsix` locally: `pnpm run package`.
-
-### One-time setup
-
-1. Create the publisher `KasperiP` at [marketplace.visualstudio.com/manage/publishers](https://marketplace.visualstudio.com/manage/publishers). This is independent of Azure DevOps and works even if you cannot create an organization.
-2. Create an Azure DevOps organization at [dev.azure.com](https://dev.azure.com). New organizations must be linked to an active Azure subscription; the free/pay-as-you-go tier is enough.
-3. In that organization, create a Personal Access Token with **Organization: All accessible organizations** and scope **Marketplace → Manage**. An organization-scoped token fails with a misleading 401. The Marketplace scope only appears after clicking **Show all scopes**.
-4. Create an environment named `marketplace` under Settings → Environments. Add yourself as a **required reviewer**, and add the token as a secret named `VSCE_PAT` **on that environment** rather than as a repository secret, so no other workflow can read it.
-
-### Token expiry
-
-Azure DevOps PATs expire — one year at most. When one lapses the release workflow fails at the publish step with a 401 that looks exactly like a misconfiguration, so it is worth a calendar reminder.
-
-**Global PATs in Azure DevOps are retired on 1 December 2026.** Before then this workflow needs to move to Microsoft Entra ID authentication. The pinned `@vscode/vsce` already supports `--azure-credential` for that, and the migration needs a managed identity with a federated credential rather than a stored secret. See [Publishing Extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
+Unit tests cannot cover real terminal timing, so describe how you verified your change in an Extension Development Host. A short screen recording is ideal for anything touching terminal creation, splitting or command execution.
