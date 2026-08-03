@@ -151,7 +151,13 @@
           }
         }
       }
-    }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "restore-terminals.json",
+        "url": "./schemas/restore-terminals.schema.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "node esbuild.config.js --production",

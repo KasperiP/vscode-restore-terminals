@@ -1,5 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import * as vscode from 'vscode';
+import { getLogger } from './log.ts';
 import type { Configuration, TerminalConfig, TerminalWindow } from './model.ts';
 import {
   resolveTerminalCwd,
@@ -22,6 +23,7 @@ interface CreatedTerminal {
 }
 
 export default async function restoreTerminals(configuration: Configuration) {
+  const log = getLogger();
   const {
     keepExistingTerminalsOpen,
     artificialDelayMilliseconds,
@@ -29,7 +31,7 @@ export default async function restoreTerminals(configuration: Configuration) {
   } = configuration;
 
   if (!terminalWindows) {
-    console.log('No terminal window configuration to restore');
+    log.debug('No terminal window configuration to restore');
     return;
   }
 
@@ -43,13 +45,13 @@ export default async function restoreTerminals(configuration: Configuration) {
   // user's current terminal layout.
   const plan = planTerminals(terminalWindows, workspaceFolders);
   if (plan.length === 0) {
-    console.log('Nothing to restore');
+    log.debug('Nothing to restore');
     return;
   }
 
   if (!keepExistingTerminalsOpen) {
     for (const terminal of vscode.window.terminals) {
-      console.log(`Disposing terminal ${terminal.name}`);
+      log.trace(`Disposing terminal ${terminal.name}`);
       terminal.dispose();
     }
   }
@@ -85,7 +87,9 @@ export default async function restoreTerminals(configuration: Configuration) {
 
   // Wait for the shells to actually be up rather than guessing with a sleep.
   // Every terminal is waited on concurrently, so this costs one shell start.
-  await Promise.all(created.map(({ terminal }) => waitForProcess(terminal)));
+  await Promise.all(
+    created.map(({ terminal }) => waitForProcess(terminal, log)),
+  );
 
   await Promise.all(
     created.map(async ({ config, terminal }) => {
@@ -95,7 +99,7 @@ export default async function restoreTerminals(configuration: Configuration) {
     }),
   );
 
-  console.log(`Restored ${created.length} terminals`);
+  log.info(`Restored ${created.length} terminals`);
 }
 
 /**
@@ -144,14 +148,17 @@ function terminalOptionsFor({
 }
 
 /** Resolves once the shell process exists, or after a timeout. */
-async function waitForProcess(terminal: vscode.Terminal) {
+async function waitForProcess(
+  terminal: vscode.Terminal,
+  log: vscode.LogOutputChannel,
+) {
   const timedOut = Symbol('timeout');
   const result = await Promise.race([
     terminal.processId,
     delay(PROCESS_START_TIMEOUT, timedOut),
   ]);
   if (result === timedOut) {
-    console.warn(`Terminal ${terminal.name} did not start in time`);
+    log.warn(`Terminal ${terminal.name} did not start in time`);
   }
 }
 

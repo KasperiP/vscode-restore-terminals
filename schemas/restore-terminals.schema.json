@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Restore Terminals config",
+  "description": "Configuration for the Restore Terminals extension, at .vscode/restore-terminals.json. Any value set here wins over the equivalent restoreTerminals.* setting in settings.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "runOnStartup": {
+      "type": "boolean",
+      "description": "Whether or not to restore the terminals when VSCode starts up."
+    },
+    "keepExistingTerminalsOpen": {
+      "type": "boolean",
+      "description": "Whether or not to keep any currently open terminals open when restoring."
+    },
+    "artificialDelayMilliseconds": {
+      "type": ["number", "null"],
+      "description": "Leave this out and Restore Terminals waits for each shell to actually start before running its commands. Set a number of milliseconds only if your setup still glitches out; it adds that pause between every step."
+    },
+    "terminals": {
+      "type": "array",
+      "description": "Each entry is one integrated terminal window.",
+      "items": { "$ref": "#/definitions/terminalWindow" }
+    }
+  },
+  "definitions": {
+    "terminalWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cwd": {
+          "type": "string",
+          "description": "The working directory for this terminal window and its splits. Supports ${workspaceFolder} in a single-root workspace and ${workspaceFolder:folderName} in a multi-root workspace."
+        },
+        "splitTerminals": {
+          "type": "array",
+          "description": "The terminals to split this window into, left to right.",
+          "items": { "$ref": "#/definitions/splitTerminal" }
+        }
+      }
+    },
+    "splitTerminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name to give the terminal."
+        },
+        "icon": {
+          "type": "string",
+          "description": "The id of a VSCode product icon, for example \"terminal-bash\" or \"flame\". See https://code.visualstudio.com/api/references/icons-in-labels for the full list.",
+          "examples": [
+            "terminal",
+            "terminal-bash",
+            "server-process",
+            "browser",
+            "beaker",
+            "database",
+            "tools",
+            "rocket",
+            "gear",
+            "flame"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "description": "The id of a VSCode theme colour for the terminal icon. The terminal.ansi* keys are recommended as they stay readable in every theme.",
+          "examples": [
+            "terminal.ansiRed",
+            "terminal.ansiGreen",
+            "terminal.ansiYellow",
+            "terminal.ansiBlue",
+            "terminal.ansiMagenta",
+            "terminal.ansiCyan",
+            "terminal.ansiWhite",
+            "terminal.ansiBrightRed",
+            "terminal.ansiBrightGreen",
+            "terminal.ansiBrightYellow",
+            "terminal.ansiBrightBlue",
+            "terminal.ansiBrightMagenta",
+            "terminal.ansiBrightCyan",
+            "terminal.ansiBrightBlack"
+          ]
+        },
+        "cwd": {
+          "type": "string",
+          "description": "The working directory for this split only, overriding the terminal window's cwd. Supports the same ${workspaceFolder} variables."
+        },
+        "shellPath": {
+          "type": "string",
+          "description": "Path to a specific shell executable to run this split under, instead of the default terminal shell."
+        },
+        "shellArgs": {
+          "type": ["array", "string"],
+          "description": "Arguments to pass to the shell executable.",
+          "items": { "type": "string" }
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables for this split, added to the ones it would normally inherit. Set a value to null to remove that variable.",
+          "additionalProperties": { "type": ["string", "null"] }
+        },
+        "commands": {
+          "type": "array",
+          "description": "The shell commands to execute when this terminal opens.",
+          "items": { "type": "string" }
+        },
+        "shouldRunCommands": {
+          "type": "boolean",
+          "description": "Whether to actually run the commands in the terminal, or just paste them there."
+        }
+      }
+    }
+  }
+}
