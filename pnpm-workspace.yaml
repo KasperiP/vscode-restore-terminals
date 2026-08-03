@@ -1,0 +1,6 @@
+# pnpm 10 blocks dependency build scripts by default. esbuild needs its
+# postinstall to fetch the platform binary.
+onlyBuiltDependencies:
+  - esbuild
+  # vsce ships its signing helper as a postinstall-extracted binary.
+  - '@vscode/vsce-sign'
