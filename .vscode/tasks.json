@@ -4,16 +4,49 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "watch",
-      "problemMatcher": "$tsc-watch",
+      // One-shot build used by the launch configs, so F5 always runs fresh code.
+      "label": "build",
+      "type": "shell",
+      "command": "pnpm run build",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+    {
+      "label": "watch",
+      "type": "shell",
+      "command": "pnpm run watch",
       "isBackground": true,
       "presentation": {
         "reveal": "never"
       },
-      "group": {
-        "kind": "build",
-        "isDefault": true
+      // esbuild reports its own errors; this matcher only tells VSCode when a
+      // rebuild starts and finishes, via the markers in esbuild.config.js.
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^\\s*(?:✘ )?\\[ERROR\\] (.+)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started$",
+          "endsPattern": "^\\[watch\\] build finished$"
+        }
+      }
+    },
+    {
+      "label": "typecheck",
+      "type": "shell",
+      "command": "pnpm run typecheck -- --watch",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never"
       }
     }
   ]

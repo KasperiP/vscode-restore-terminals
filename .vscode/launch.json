@@ -1,4 +1,4 @@
-// A launch configuration that compiles the extension and then opens it inside a new window
+// A launch configuration that bundles the extension and then opens it inside a new window
 // Use IntelliSense to learn about possible attributes.
 // Hover to view descriptions of existing attributes.
 // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
@@ -6,25 +6,32 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Extension",
-      "type": "extensionHost",
-      "request": "launch",
-      "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
-      "preLaunchTask": "${defaultBuildTask}"
-    },
-    {
-      "name": "Extension Tests",
+      // Opens sample-test-project as the workspace, so .vscode/restore-terminals.json
+      // there is picked up and terminals restore on startup.
+      "name": "Run Extension (sample project)",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+        "--disable-extensions",
+        "${workspaceFolder}/sample-test-project"
       ],
-      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-      "preLaunchTask": "${defaultBuildTask}"
+      "outFiles": ["${workspaceFolder}/out/**/*.cjs"],
+      "preLaunchTask": "build"
+    },
+    {
+      // No folder, so only the restoreTerminals.* settings.json values apply.
+      "name": "Run Extension (empty window)",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--disable-extensions"
+      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.cjs"],
+      "preLaunchTask": "build"
     }
   ]
 }

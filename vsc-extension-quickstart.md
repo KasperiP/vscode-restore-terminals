@@ -1,42 +1,71 @@
-# Welcome to your VS Code Extension
+# Developing this extension
+
+## Requirements
+
+- Node.js 26 or newer
+- pnpm 10 (pinned via the `packageManager` field — `corepack enable` will pick it up)
 
 ## What's in the folder
 
-* This folder contains all of the files necessary for your extension.
-* `package.json` - this is the manifest file in which you declare your extension and command.
-  * The sample plugin registers a command and defines its title and command name. With this information VS Code can show the command in the command palette. It doesn’t yet need to load the plugin.
-* `src/extension.ts` - this is the main file where you will provide the implementation of your command.
-  * The file exports one function, `activate`, which is called the very first time your extension is activated (in this case by executing the command). Inside the `activate` function we call `registerCommand`.
-  * We pass the function containing the implementation of the command as the second parameter to `registerCommand`.
+- `package.json` - the extension manifest: the `Restore Terminals` command and every `restoreTerminals.*` setting are declared here.
+- `src/extension.ts` - entry point. Exports `activate`, which registers the command and restores terminals on startup.
+- `src/restoreTerminals.ts` - creates the terminal windows and their splits, then sends the configured commands.
+- `src/configuration.ts` - merges `settings.json` with an optional `.vscode/restore-terminals.json` (the file wins).
+- `src/terminalCwd.ts` - resolves `${workspaceFolder}` / `${workspaceFolder:name}` in a terminal window's `cwd`.
+- `esbuild.config.js` - bundles `src/extension.ts` into `out/extension.cjs`. The sources are ESM; the bundle is CommonJS because that is what the extension host loads.
 
 ## Get up and running straight away
 
-* Press `F5` to open a new window with your extension loaded.
-* Run your command from the command palette by pressing (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac) and typing `Hello World`.
-* Set breakpoints in your code inside `src/extension.ts` to debug your extension.
-* Find output from your extension in the debug console.
+```sh
+pnpm install
+```
+
+Then press **`F5`** and pick **Run Extension (sample project)** (it is the default). That builds the bundle and opens an Extension Development Host with `sample-test-project` as its workspace, so `sample-test-project/.vscode/restore-terminals.json` is picked up. It sets `runOnStartup: true`, so terminals restore as soon as the window appears.
+
+Other extensions are disabled in that window (`--disable-extensions`) so nothing else can interfere with the terminals.
+
+To test the `settings.json` path instead of the config file, use **Run Extension (empty window)** and add `restoreTerminals.*` settings there.
+
+### Without the debugger
+
+```sh
+pnpm run build
+code --extensionDevelopmentPath="$PWD" --disable-extensions sample-test-project
+```
+
+### Things to check
+
+- The right number of windows and splits, in left-to-right array order
+- Terminal names, icons and colours
+- Commands landing in the correct terminals
+- `shouldRunCommands: false` pastes without executing
+- `Restore Terminals` from the command palette re-runs it
+
+Extension output goes to **Output > Restore Terminals**. Set the level to Trace (`Developer: Set Log Level…`) to see each terminal being disposed and created.
 
 ## Make changes
 
-* You can relaunch the extension from the debug toolbar after changing code in `src/extension.ts`.
-* You can also reload (`Ctrl+R` or `Cmd+R` on Mac) the VS Code window with your extension to load your changes.
+- `pnpm run watch` rebundles on save; relaunch from the debug toolbar or reload the window (`Ctrl+R` / `Cmd+R`).
+- Local builds are unminified and carry a sourcemap, so breakpoints in `src/*.ts` bind. Only `vscode:prepublish` passes `--production` to minify.
+- Types are not checked by esbuild. Run `pnpm run typecheck` (or the `typecheck` task, which watches).
 
+## Checks
+
+```sh
+pnpm run typecheck   # tsc --noEmit
+pnpm run lint        # eslint, type-aware
+pnpm run test:unit   # node --test, runs the .ts sources directly
+pnpm test            # all three
+```
+
+Unit tests live in `src/test/unit` and use the built-in `node:test` runner. Node runs the TypeScript sources directly via type stripping, so there is no compile step before testing. Anything that needs the real `vscode` API has to be verified by hand in the Extension Development Host — there is no integration-test harness.
 
 ## Explore the API
 
-* You can open the full set of our API when you open the file `node_modules/@types/vscode/index.d.ts`.
+- The full API surface is in `node_modules/@types/vscode/index.d.ts`.
 
-## Run tests
+## Publish
 
-* Open the debug viewlet (`Ctrl+Shift+D` or `Cmd+Shift+D` on Mac) and from the launch configuration dropdown pick `Extension Tests`.
-* Press `F5` to run the tests in a new window with your extension loaded.
-* See the output of the test result in the debug console.
-* Make changes to `src/test/suite/extension.test.ts` or create new test files inside the `test/suite` folder.
-  * The provided test runner will only consider files matching the name pattern `**.test.ts`.
-  * You can create folders inside the `test` folder to structure your tests any way you want.
+Pushing to `master` triggers `.github/workflows/deploy.yml`, which publishes to the Marketplace only if `version` in `package.json` is greater than the published version. Bump it in the same commit as the change.
 
-## Go further
-
- * Reduce the extension size and improve the startup time by [bundling your extension](https://code.visualstudio.com/api/working-with-extensions/bundling-extension).
- * [Publish your extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VSCode extension marketplace.
- * Automate builds by setting up [Continuous Integration](https://code.visualstudio.com/api/working-with-extensions/continuous-integration).
+To build a `.vsix` locally: `pnpm run package`.
