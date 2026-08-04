@@ -1,7 +1,12 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import * as vscode from 'vscode';
 import { getLogger } from './log.ts';
-import type { Configuration, TerminalConfig, TerminalWindow } from './model.ts';
+import type {
+  Configuration,
+  TerminalConfig,
+  TerminalWindow,
+  TerminalWindowLocation,
+} from './model.ts';
 import {
   resolveTerminalCwd,
   type WorkspaceFolderForCwd,
@@ -15,6 +20,12 @@ const SHELL_INTEGRATION_TIMEOUT = 5_000;
 interface PlannedTerminal {
   config: TerminalConfig;
   cwd: string | undefined;
+}
+
+interface PlannedWindow {
+  /** Left undefined when unconfigured, so VSCode's own default still applies. */
+  location: TerminalWindowLocation | undefined;
+  splits: PlannedTerminal[];
 }
 
 interface CreatedTerminal {
@@ -63,12 +74,16 @@ export default async function restoreTerminals(configuration: Configuration) {
   if (stepDelay > 0) await delay(stepDelay);
 
   const created: CreatedTerminal[] = [];
-  for (const splits of plan) {
+  for (const { location, splits } of plan) {
     const [first, ...remaining] = splits;
 
-    const parentTerminal = vscode.window.createTerminal(
-      terminalOptionsFor(first),
-    );
+    const parentTerminal = vscode.window.createTerminal({
+      ...terminalOptionsFor(first),
+      // Only the first terminal of a window picks its location. The splits then
+      // follow their parent, which the API supports in either area. Passing
+      // undefined leaves terminal.integrated.defaultLocation in charge.
+      location: terminalLocationFor(location),
+    });
     parentTerminal.show();
     created.push({ config: first.config, terminal: parentTerminal });
     if (stepDelay > 0) await delay(stepDelay);
@@ -112,21 +127,35 @@ export default async function restoreTerminals(configuration: Configuration) {
 function planTerminals(
   terminalWindows: readonly TerminalWindow[],
   workspaceFolders: readonly WorkspaceFolderForCwd[] | undefined,
-): PlannedTerminal[][] {
+): PlannedWindow[] {
   return terminalWindows
     .map((terminalWindow) => {
       const windowCwd = resolveTerminalCwd(
         terminalWindow.cwd,
         workspaceFolders,
       );
-      return (terminalWindow.splitTerminals ?? []).map((config) => ({
-        config,
-        cwd: config.cwd
-          ? resolveTerminalCwd(config.cwd, workspaceFolders)
-          : windowCwd,
-      }));
+      return {
+        location: terminalWindow.location,
+        splits: (terminalWindow.splitTerminals ?? []).map((config) => ({
+          config,
+          cwd: config.cwd
+            ? resolveTerminalCwd(config.cwd, workspaceFolders)
+            : windowCwd,
+        })),
+      };
     })
-    .filter((splits) => splits.length > 0);
+    .filter(({ splits }) => splits.length > 0);
+}
+
+function terminalLocationFor(location: TerminalWindowLocation | undefined) {
+  switch (location) {
+    case 'editor':
+      return vscode.TerminalLocation.Editor;
+    case 'panel':
+      return vscode.TerminalLocation.Panel;
+    default:
+      return undefined;
+  }
 }
 
 /**

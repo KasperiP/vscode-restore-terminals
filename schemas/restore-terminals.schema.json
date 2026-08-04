@@ -32,6 +32,11 @@
           "type": "string",
           "description": "The working directory for this terminal window and its splits. Supports ${workspaceFolder} in a single-root workspace and ${workspaceFolder:folderName} in a multi-root workspace."
         },
+        "location": {
+          "type": "string",
+          "enum": ["panel", "editor"],
+          "description": "Where this terminal window opens: \"panel\" for the terminal panel, or \"editor\" to open it as an editor tab. Its splits follow it either way. Leave it unset to use the terminal.integrated.defaultLocation setting."
+        },
         "splitTerminals": {
           "type": "array",
           "description": "The terminals to split this window into, left to right.",

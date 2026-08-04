@@ -88,6 +88,19 @@ You can also keep the config in the workspace itself, at `.vscode/restore-termin
 
 ## Options
 
+### Where a terminal window opens
+
+Set `location` to `"editor"` on a window to open it as an editor tab rather than in the terminal panel, which suits a long-running log or dev server you want to keep visible next to your code:
+
+```json
+{
+  "location": "editor",
+  "splitTerminals": [{ "name": "logs", "commands": ["npm run logs"] }]
+}
+```
+
+`location` is set per terminal window, not per split, and the splits open beside their window wherever it is. The other accepted value is `"panel"`. Leave `location` out and VSCode's own `terminal.integrated.defaultLocation` setting decides.
+
 ### Icons and colours
 
 Every terminal, including each split, can set its own `icon` and `color` so you can tell them apart at a glance in the terminal tab list.

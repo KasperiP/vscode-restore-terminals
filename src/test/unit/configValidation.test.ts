@@ -95,6 +95,36 @@ suite('parseJsonConfiguration', () => {
     );
   });
 
+  test('parses an editor-area terminal window', () => {
+    const config = parseJsonConfiguration(
+      '{"terminals":[{"location":"editor","splitTerminals":[{"name":"logs"}]}]}',
+    );
+
+    assert.equal(config.terminals?.[0].location, 'editor');
+  });
+
+  test('leaves location unset when it is not configured', () => {
+    const config = parseJsonConfiguration(
+      '{"terminals":[{"splitTerminals":[{"name":"logs"}]}]}',
+    );
+
+    assert.equal(config.terminals?.[0].location, undefined);
+  });
+
+  test('rejects an unknown location, echoing the typo', () => {
+    assert.throws(
+      () => parseJsonConfiguration('{"terminals":[{"location":"panels"}]}'),
+      /terminals\[0\]\.location should be "panel" or "editor" but is "panels"/,
+    );
+  });
+
+  test('rejects a location that is not a string', () => {
+    assert.throws(
+      () => parseJsonConfiguration('{"terminals":[{"location":2}]}'),
+      /terminals\[0\]\.location should be "panel" or "editor" but is a number/,
+    );
+  });
+
   test('rejects a top level array', () => {
     assert.throws(
       () => parseJsonConfiguration('[]'),

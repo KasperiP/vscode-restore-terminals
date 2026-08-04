@@ -1,8 +1,10 @@
-import type {
-  Configuration,
-  JsonConfiguration,
-  TerminalConfig,
-  TerminalWindow,
+import {
+  TERMINAL_WINDOW_LOCATIONS,
+  type Configuration,
+  type JsonConfiguration,
+  type TerminalConfig,
+  type TerminalWindow,
+  type TerminalWindowLocation,
 } from './model.ts';
 
 /**
@@ -46,6 +48,25 @@ function optionalNumber(value: unknown, path: string): number | undefined {
     fail(path, 'a number', value);
   }
   return value;
+}
+
+function optionalLocation(
+  value: unknown,
+  path: string,
+): TerminalWindowLocation | undefined {
+  if (value === undefined) return undefined;
+  const expected = TERMINAL_WINDOW_LOCATIONS.map(
+    (location) => `"${location}"`,
+  ).join(' or ');
+  if (typeof value !== 'string') fail(path, expected, value);
+  if (!TERMINAL_WINDOW_LOCATIONS.includes(value as TerminalWindowLocation)) {
+    // Echoing the value matters more here than elsewhere: "a string" would hide
+    // the one detail that identifies a typo like "panels".
+    throw new ConfigurationError(
+      `${path} should be ${expected} but is "${value}"`,
+    );
+  }
+  return value as TerminalWindowLocation;
 }
 
 function optionalStringArray(
@@ -117,6 +138,7 @@ function parseTerminalWindow(value: unknown, path: string): TerminalWindow {
 
   return {
     cwd: optionalString(raw.cwd, `${path}.cwd`),
+    location: optionalLocation(raw.location, `${path}.location`),
     splitTerminals: (raw.splitTerminals as unknown[] | undefined)?.map(
       (split, index) =>
         parseSplitTerminal(split, `${path}.splitTerminals[${index}]`),

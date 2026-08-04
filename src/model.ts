@@ -10,8 +10,17 @@ export interface TerminalConfig {
   shouldRunCommands?: boolean; //whether to actually run the commands, or just paste them in
 }
 
+/** Where a terminal window and its splits open: the panel, or the editor area. */
+export type TerminalWindowLocation = 'panel' | 'editor';
+
+export const TERMINAL_WINDOW_LOCATIONS: readonly TerminalWindowLocation[] = [
+  'panel',
+  'editor',
+];
+
 export interface TerminalWindow {
   cwd?: string;
+  location?: TerminalWindowLocation; //unset means VSCode's own default location
   splitTerminals?: TerminalConfig[];
 }
 

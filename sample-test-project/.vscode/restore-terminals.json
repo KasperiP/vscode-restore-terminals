@@ -53,6 +53,27 @@
           ]
         }
       ]
+    },
+    {
+      "location": "editor",
+      "splitTerminals": [
+        {
+          "name": "editor area",
+          "icon": "book",
+          "color": "terminal.ansiRed",
+          "commands": [
+            "echo 'window 3, split 1 of 2 — this window should be an editor tab, not in the panel'"
+          ]
+        },
+        {
+          "name": "editor split",
+          "icon": "book",
+          "color": "terminal.ansiRed",
+          "commands": [
+            "echo 'window 3, split 2 of 2 — split beside the other editor terminal'"
+          ]
+        }
+      ]
     }
   ]
 }
