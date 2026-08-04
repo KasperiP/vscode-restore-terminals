@@ -73,14 +73,17 @@ export default async function restoreTerminals(configuration: Configuration) {
     created.push({ config: first.config, terminal: parentTerminal });
     if (stepDelay > 0) await delay(stepDelay);
 
+    // VSCode places a split directly beside its parent, so splitting off the
+    // first terminal every time would reverse the configured order. Chaining
+    // from the terminal created last keeps splitTerminals left to right.
+    let previousTerminal = parentTerminal;
     for (const split of remaining) {
-      created.push({
-        config: split.config,
-        terminal: vscode.window.createTerminal({
-          ...terminalOptionsFor(split),
-          location: { parentTerminal },
-        }),
+      const terminal = vscode.window.createTerminal({
+        ...terminalOptionsFor(split),
+        location: { parentTerminal: previousTerminal },
       });
+      created.push({ config: split.config, terminal });
+      previousTerminal = terminal;
       if (stepDelay > 0) await delay(stepDelay);
     }
   }
