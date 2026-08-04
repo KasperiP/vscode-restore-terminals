@@ -2,6 +2,11 @@
 
 Versions up to and including 1.1.9 are from the original [Restore Terminals](https://github.com/EthanSK/restore-terminals-vscode) by Ethan Sarif-Kattan. From 1.2.3 onwards this is the community fork.
 
+## 1.2.7
+
+- Added a terminal-window `location` option. Set it to `"editor"` to open that window and its splits as editor tabs, or `"panel"` for the terminal panel. Leave it unset and VSCode's own `terminal.integrated.defaultLocation` decides, as before.
+- Fixed: splits now open in the order they are listed in `splitTerminals`. Every split was previously created beside the first terminal of its window, which reversed everything after the first one.
+
 ## 1.2.6
 
 - Documentation only, no functional changes: a banner and status badges on the README, clearer settings and timing sections, and a contributor list.
